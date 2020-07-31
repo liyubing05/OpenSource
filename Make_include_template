@@ -27,11 +27,11 @@ OPTC = -O3 -ffast-math
 OPTC += -fopenmp
 
 # for better performing code you can try:
-#OPTC = -O3 -fno-trapping-math -ffast-math -funroll-all-loops -mavx -fomit-frame-pointer -mfpmath=sse -ftree-vectorizer-verbose=1
-# Linux gcc version 3.x
-#OPTC = -O3 -ffast-math -funroll-all-loops -mfpmath=sse
+#OPTC = -O3 -fno-trapping-math -ffast-math -funroll-all-loops -fomit-frame-pointer -ftree-vectorizer-verbose=1
+# Linux gcc very old version 3.x
+#OPTC = -O3 -ffast-math -funroll-all-loops 
 
-#for double precision use FFTlib and emmod
+#enable double precision only for use in FFTlib and emmod
 #OPTC += -DDOUBLE
 #OPTF += -fdefault-double-8 -fdefault-real-8
 
@@ -82,8 +82,7 @@ OPTC += -fopenmp
 #LDFLAGS = -static -Ofast
 
 #############################################################################
-# BLAS and LAPACK libraries 
-# and FFT LIBRARIES
+# BLAS and LAPACK libraries and FFT LIBRARIES
 #MKLROOT=/opt/intel/mkl/
 MKLLIB=${MKLROOT}/lib
 OPTC += -DMKL -I$(MKLROOT)/include -I$(MKLROOT)/include/fftw
@@ -98,7 +97,8 @@ BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm
 #for intel compilers
 #BLAS = -mkl
 #
-#If you do not want to use MKL
+#If you do not want or can not use MKL you can try the basic lapack and blas libaries that are default installed on most Linux
+#systems
 #BLAS = -llapack -lblas
 
 #############################################################################
@@ -107,8 +107,15 @@ BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm
 #OPTC += -DACML440 -I$(AMDROOT)/include
 #BLAS = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt -lm
 
+# FOR ZFP LIBRARIES
+ZFPROOT = ${ROOT}/zfp
+ZFP = -L${ZFPROOT}/lib -lzfp
+ZFPINCL = ${ZFPROOT}/include
+OPTC += -I${ZFPINCL}
+
 #LIBARIES
-LIBS= -L$L -lgenfft  $(BLAS)
+LIBS= -L$L -lgenfft $(FFT) $(BLAS) $(ZFP)
+
 
 
 ########################################################################

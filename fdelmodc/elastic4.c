@@ -103,7 +103,7 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 	}
 
 	/* Add force source */
-	if (src.type > 5) {
+	if (src.type > 5 && src.type!=20) {
 		 applySource(mod, src, wav, bnd, itime, ixsrc, izsrc, vx, vz, tzz, txx, txz, rox, roz, l2m, src_nwav, verbose);
 	}
 

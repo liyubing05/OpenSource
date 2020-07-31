@@ -52,7 +52,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	float xsnap1, xsnap2, zsnap1, zsnap2, xmax, zmax;
 	float xsrc1, xsrc2, zsrc1, zsrc2, tsrc1, tsrc2, tlength, tactive;
 	float src_angle, src_velo, p, grad2rad, rdelay, scaledt;
-	float *xsrca, *zsrca, rrcv;
+	float *xsrca, *zsrca, rrcv, strike, rake, dip;
 	float rsrc, oxsrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
 	int i, j;
@@ -173,7 +173,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	/* check if receiver delays is defined; option inactive: add delay time to total modeling time */
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
 	rec->delay=NINT(rdelay/mod->dt);
-//	mod->tmod += rdelay;
 	mod->nt = NINT(mod->tmod/mod->dt);
 	dt = mod->dt;
 
@@ -553,11 +552,21 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("nshot",&shot->n)) shot->n=1;
 	if (!getparfloat("dxshot",&dxshot)) dxshot=dx;
 	if (!getparfloat("dzshot",&dzshot)) dzshot=0.0;
+	if (!getparfloat("Mxx",&src->Mxx)) src->Mxx=1.0;
+	if (!getparfloat("Mzz",&src->Mzz)) src->Mzz=1.0;
+	if (!getparfloat("Mxz",&src->Mxz)) src->Mxz=1.0;
 	if (!getparfloat("dip",&src->dip)) src->dip=0.0;
-	if (!getparfloat("strike",&src->strike)) src->strike=1.0;
-	if (src->strike>=0) src->strike=0.5*M_PI;
-	else src->strike = -0.5*M_PI;
-	src->dip = M_PI*(src->dip/180.0);
+	if (!getparfloat("strike",&strike)) strike=90.0;
+	if (!getparfloat("rake",&rake)) rake=90.0;
+	strike = M_PI*(strike/180.0);
+	rake   = M_PI*(rake/180.0);
+	dip    = M_PI*(dip/180.0);
+
+	if (src->type==9) {
+		src->Mxx = -1.0*(sin(dip)*cos(rake)*sin(2.0*strike)+sin(dip*2.0)*sin(rake)*sin(strike)*sin(strike));
+		src->Mxz = -1.0*(cos(dip)*cos(rake)*cos(strike)+cos(dip*2.0)*sin(rake)*sin(strike));
+		src->Mzz = sin(dip*2.0)*sin(rake);
+	}
 
 	if (shot->n>1) {
 		idxshot=MAX(0,NINT(dxshot/dx));
@@ -925,6 +934,10 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			wav->nst = nsamp; /* put total number of samples in nst part */
 		}
 	}
+    if (src->type==7) { /* set also src_injectionrate=1  */
+		vwarn("For src_type=7 injectionrate is always set to 1");
+        src->injectionrate=1;
+    }
 
 	if (src->multiwav) {
 		if (wav->nx != nsrc) {
@@ -956,8 +969,13 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			case 6 : fprintf(stderr,"Fx "); break;
 			case 7 : fprintf(stderr,"Fz "); break;
 			case 8 : fprintf(stderr,"P-potential"); break;
+			case 9 : fprintf(stderr,"double-couple"); break;
+			case 10 : fprintf(stderr,"Fz on P grid with +/-"); break;
+			case 11 : fprintf(stderr,"moment tensor"); break;
 		}
 		fprintf(stderr,"\n");
+		if (src->type==9) vmess("strike %.2f rake %.2f dip %.2f",180.0*strike/M_PI,180.0*rake/M_PI,180.0*dip/M_PI);
+		if (src->type==9 || src->type==11) vmess("Mxx %.2f Mzz %.2f Mxz %.2f",src->Mxx,src->Mzz,src->Mxz);
 		if (wav->random) vmess("Wavelet has a random signature with fmax=%.2f", wav->fmax);
 		if (src->n>1) {
 			vmess("*******************************************");
@@ -1110,7 +1128,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	rec->skipdt=NINT(dtrcv/dt);
 	dtrcv = mod->dt*rec->skipdt;
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
-	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod-rdelay)/dtrcv)+1;
+	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=(int)round((mod->tmod-rdelay+0.01*mod->dt)/dtrcv)+1;
 	if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=0;
 	if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=0;
 	if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=0;
@@ -1118,7 +1136,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("scale",&rec->scale)) rec->scale=0;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
-	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay)/dtrcv)+1);
+	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay+0.01*mod->dt)/dtrcv)+1);
 
 /* allocation of receiver arrays is done in recvPar */
 /*
@@ -1216,7 +1234,9 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			if (rec->type.vz) fprintf(stderr,"Vz ");
 			if (rec->type.vx) fprintf(stderr,"Vx ");
 			if (rec->type.p) fprintf(stderr,"p ");
-    		if (rec->type.ud) fprintf(stderr,"P+ P- ");
+    		if (rec->type.ud==1) fprintf(stderr,"P+ P- Pressure normalized");
+    		if (rec->type.ud==2) fprintf(stderr,"P+ P- Particle Velocity normalized");
+    		if (rec->type.ud==3) fprintf(stderr,"P+ P- Flux normalized");
 			if (mod->ischeme>2) {
 				if (rec->type.txx) fprintf(stderr,"Txx ");
 				if (rec->type.tzz) fprintf(stderr,"Tzz ");

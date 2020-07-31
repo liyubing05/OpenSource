@@ -7,7 +7,7 @@ include ../Make_include
 #OPTC += -g -traceback #-check-pointers=rw -check-pointers-undimensioned
 
 
-ALL: fmute marchenko marchenko_primaries
+ALL: fmute marchenko marchenko_primaries 
 
 SRCJ	= fmute.c \
 		getFileInfo.c  \
@@ -27,6 +27,7 @@ SRCH	= marchenko.c \
 		readShotData.c \
 		readTinvData.c \
 		applyMute.c \
+		applyMute_tshift.c \
 		writeData.c \
 		writeDataIter.c \
 		wallclock_time.c \
@@ -42,6 +43,7 @@ SRCP	= marchenko_primaries.c \
 		readData.c \
 		readShotData.c \
 		readTinvData.c \
+		findFirstBreak.c \
 		writeData.c \
 		writeDataIter.c \
 		wallclock_time.c \

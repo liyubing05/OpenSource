@@ -27,7 +27,7 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 	int isrc, ix, iz, n1;
 	int id1, id2;
 	float src_ampl, time, scl, dt, sdx;
-	float Mxx, Mzz, Mxz, rake;
+	float Mxx, Mzz, Mxz;
 	static int first=1;
 
 	if (src.type==6) {
@@ -89,7 +89,11 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 			ix = src.x[isrc] + ibndx;
 			iz = src.z[isrc] + ibndz;
 		}
-		else { /* plane wave and point sources */
+        else if (src.plane) {/* plane wave sources */
+            ix = ixsrc + ibndx + src.x[isrc];
+            iz = izsrc + ibndz + src.z[isrc];
+		}
+		else { /* point sources */
             ix = ixsrc + ibndx + is0 + isrc;
             iz = izsrc + ibndz;
 		}
@@ -156,6 +160,10 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 			/* stable implementation changes amplitude and more work is needed */
 			//vz[ix*n1+iz] = 0.5*(vz[ix*n1+iz-1]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
 			//vz[ix*n1+iz] = 0.25*(vz[ix*n1+iz-2]+vz[ix*n1+iz-1]+vz[ix*n1+iz]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
+        } 
+		else if (src.type == 10) { /* scale with 1/(ro*2dx) note that roz=dt/(ro*dx) */
+		    tzz[ix*n1+iz-1] -= src_ampl*roz[ix*n1+iz]/(2.0*mod.dt);
+		    tzz[ix*n1+iz+1] += src_ampl*roz[ix*n1+iz]/(2.0*mod.dt);
         } /* src.type */
 
         
@@ -329,15 +337,10 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
                     vz[ix*n1+iz]     += src_ampl*sdx;
                 }
 			}
-            else if(src.type == 9) {
-				rake = 0.5*M_PI;
-				Mxx = -1.0*(sin(src.dip)*cos(rake)*sin(2.0*src.strike)+sin(src.dip*2.0)*sin(rake)*sin(src.strike)*sin(src.strike));
-				Mxz = -1.0*(cos(src.dip)*cos(rake)*cos(src.strike)+cos(src.dip*2.0)*sin(rake)*sin(src.strike));
-				Mzz = sin(src.dip*2.0)*sin(rake);
-
-				txx[ix*n1+iz] -= Mxx*src_ampl;
-				tzz[ix*n1+iz] -= Mzz*src_ampl;
-				txz[ix*n1+iz] -= Mxz*src_ampl;
+            else if(src.type == 9 || src.type == 11) {
+				txx[ix*n1+iz] -= src.Mxx*src_ampl;
+				tzz[ix*n1+iz] -= src.Mzz*src_ampl;
+				txz[ix*n1+iz] -= src.Mxz*src_ampl;
 			} /* src.type */
 		} /* ischeme */
 }

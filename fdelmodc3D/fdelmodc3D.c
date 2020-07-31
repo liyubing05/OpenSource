@@ -141,6 +141,7 @@ char *sdoc[] = {
 "                     - 3=dipole - + horizontal oriented",
 "   dip=0 ............. dip for double-couple source",
 "   strike=0 .......... strike for double-couple source",
+"   rake=0 ............ rake for double-couple source",
 "   xsrc=middle ....... x-position of (first) shot ",
 "   ysrc=middle ....... y-position of (first) shot ",
 "   zsrc=zmin ......... z-position of (first) shot ",
@@ -270,9 +271,14 @@ char *sdoc[] = {
 " NOTES: For viscoelastic media dispersion and stability are not always",
 " guaranteed by the calculated criteria, especially for Q values smaller than 13",
 "",
+"      Original fdelmodc by",
 "      Jan Thorbecke 2011",
 "      TU Delft",
 "      E-mail: janth@xs4all.nl ",
+"      3D extension by",
+"      Joeri Brackenhoff 2019",
+"      TU Delft",
+"      E-mail: jabrackenhoff@tudelft.nl ",
 "      2015  Contributions from Max Holicki",
 "",
 NULL};
@@ -287,6 +293,7 @@ int main(int argc, char **argv)
 	srcPar src;
 	bndPar bnd;
 	shotPar shot;
+	FILE 	*fp;
 	float **src_nwav;
 	float ***rox, ***roy, ***roz, ***l2m, ***lam, ***mul;
 	float *tss, *tes, *tep, *p, *q, *r;
@@ -358,6 +365,43 @@ int main(int argc, char **argv)
 	/* read velocity and density files */
 
 	readModel3D(mod, bnd, rox, roy, roz, l2m, lam, mul, tss, tes, tep);
+
+	// tss = (float *)calloc(sizem,sizeof(float));
+	// for (iz=0; iz<mod.naz; iz++) {
+	// 	for (iy=0; iy<mod.nay; iy++) {
+	// 		for (ix=0; ix<mod.nax; ix++) {
+	// 			tss[iy*n2*n1+ix*n1+iz] = roy[iy][ix][iz];
+	// 		}
+	// 	}
+	// }
+	// vmess("nax:%li nay:%li naz:%li",mod.nax,mod.nay,mod.naz);
+	// fp = fopen("roy.bin","w+");
+	// fwrite(tss,sizem,sizeof(float),fp);
+	// fclose(fp);
+	// for (iz=0; iz<mod.naz; iz++) {
+	// 	for (iy=0; iy<mod.nay; iy++) {
+	// 		for (ix=0; ix<mod.nax; ix++) {
+	// 			tss[iy*n2*n1+ix*n1+iz] = rox[iy][ix][iz];
+	// 		}
+	// 	}
+	// }
+	// vmess("nax:%li nay:%li naz:%li",mod.nax,mod.nay,mod.naz);
+	// fp = fopen("rox.bin","w+");
+	// fwrite(tss,sizem,sizeof(float),fp);
+	// fclose(fp);
+	// for (iz=0; iz<mod.naz; iz++) {
+	// 	for (iy=0; iy<mod.nay; iy++) {
+	// 		for (ix=0; ix<mod.nax; ix++) {
+	// 			tss[iy*n2*n1+ix*n1+iz] = roz[iy][ix][iz];
+	// 		}
+	// 	}
+	// }
+	// vmess("nax:%li nay:%li naz:%li",mod.nax,mod.nay,mod.naz);
+	// fp = fopen("roz.bin","w+");
+	// fwrite(tss,sizem,sizeof(float),fp);
+	// fclose(fp);
+	// free(tss);
+	// return 0;
 
 	/* read and/or define source wavelet(s) */
 

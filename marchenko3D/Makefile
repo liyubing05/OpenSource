@@ -2,7 +2,8 @@
 
 include ../Make_include
 
-LIBS    += -L$L -lgenfft -lm $(LIBSM)
+LIBS    += -L$L -lgenfft -lzfp -lm $(LIBSM)
+CFLAGS  += 
 #OPTC += -g -O0 -Wall 
 
 #ALL: fmute marchenko marchenko2
@@ -12,8 +13,10 @@ ALL: marchenko3D fmute3D TWtransform
 SRCT	= marchenko3D.c \
 		getFileInfo3D.c  \
 		getFileInfo3DW.c  \
+		getFileInfo3Dzfp.c  \
 		readData3D.c \
 		readShotData3D.c \
+		readShotData3Dzfp.c \
 		readTinvData3D.c \
 		synthesis3D.c \
 		applyMute3D.c \
